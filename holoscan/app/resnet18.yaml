@@ -1,0 +1,18 @@
+inference:
+  backend: "trt"
+
+  model_path_map:
+    resnet18: "/home/anurag-h/RealTimeMedicalImaging/holoscan/models/resnet18_busi.onnx"
+
+  input_map:
+    resnet18: ["data"]
+
+  output_map:
+    resnet18: ["softmax1000Output"]
+
+  input_on_cuda: false
+  output_on_cuda: false
+  transmit_on_cuda: false
+
+  enable_fp16: false
+  enable_cuda_graphs: true

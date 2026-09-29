@@ -71,3 +71,18 @@ codegen/
 # GPU Coder generated report
 # ============================================================
 inference/gpucoderSetupReport.html
+
+# Holoscan build files
+holoscan/app/build/
+holoscan/app/core
+holoscan/app/*.core
+
+# TensorRT generated engines
+holoscan/models/*.engine
+holoscan/models/*.trt.*
+
+# Python virtual environment
+holoscan-venv/
+
+# Generated MATLAB ONNX/codegen package
+models/+resnet18_busi/
