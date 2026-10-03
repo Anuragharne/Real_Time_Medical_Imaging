@@ -15,4 +15,4 @@ inference:
   transmit_on_cuda: false
 
   enable_fp16: false
-  enable_cuda_graphs: true
+  enable_cuda_graphs: false
