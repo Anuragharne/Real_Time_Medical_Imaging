@@ -89,3 +89,7 @@ models/+resnet18_busi/
 
 # Scratch scripts
 scratch/
+
+# Reconstruction temporary binaries
+reconstruction/cuda/*.bin
+reconstruction/cuda/main_das_cuda
