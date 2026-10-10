@@ -86,3 +86,6 @@ holoscan-venv/
 
 # Generated MATLAB ONNX/codegen package
 models/+resnet18_busi/
+
+# Scratch scripts
+scratch/

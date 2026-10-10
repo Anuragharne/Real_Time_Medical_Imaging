@@ -57,3 +57,54 @@ Prediction + Confidence
           |
           v
 MATLAB GUI
+```
+
+## NVIDIA Holoscan C++ Real-Time Inference Pipeline
+
+The repository includes a high-performance C++ real-time inference pipeline built on the **NVIDIA Holoscan SDK (v4.6)** and **TensorRT**.
+
+### Environment Setup (WSL Ubuntu-22.04)
+
+- **OS:** Ubuntu 22.04 LTS (WSL2)
+- **SDK:** NVIDIA Holoscan SDK 4.6 (`/opt/nvidia/holoscan`)
+- **CUDA:** CUDA Toolkit 13.4 (`/usr/local/cuda-13.4`)
+- **GPU:** NVIDIA GeForce RTX 4050 Laptop GPU (6 GB VRAM)
+
+### Build Instructions
+
+Build the application from the canonical Windows checkout through WSL Bash:
+
+```bash
+# Run from WSL Ubuntu-22.04
+cd /mnt/c/Users/anura/Desktop/RealTimeMedicalImaging
+./scripts/build_holoscan.sh
+```
+
+By default, build artifacts are stored in `~/holoscan_build` (outside the Git working tree) to keep the repository clean.
+
+### Execution Instructions
+
+Run the compiled pipeline:
+
+```bash
+# Default run (100 measured frames + 10 warmup frames)
+./scripts/run_holoscan.sh
+
+# Fast 5-frame smoke test
+STREAM_MEASURED=5 ./scripts/run_holoscan.sh
+```
+
+### Environment Variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `ULTRASOUND_ROOT` | Path to BUSI dataset directory containing `benign/`, `malignant/`, `normal/` subdirectories | `$PROJECT_ROOT/data/Dataset_BUSI_with_GT` |
+| `STREAM_MEASURED` | Number of frames to benchmark after initial 10 warm-up frames | `100` |
+| `HOLOSCAN_MODEL_PATH` | Path to fine-tuned ResNet-18 ONNX model | `$PROJECT_ROOT/holoscan/models/resnet18_busi.onnx` |
+| `BUILD_DIR` | Output directory for Holoscan build artifacts and TRT engine | `${HOME}/holoscan_build` |
+
+### Troubleshooting & Common Failure Checks
+
+1. **Dataset directory missing:** Ensure `data/Dataset_BUSI_with_GT` exists in the canonical checkout or set `ULTRASOUND_ROOT` to point to a valid dataset location.
+2. **ONNX model missing:** Ensure `holoscan/models/resnet18_busi.onnx` is present or set `HOLOSCAN_MODEL_PATH`.
+3. **CUDA Toolkit not found:** Ensure CUDA 13.4 is installed at `/usr/local/cuda-13.4` or `/usr/local/cuda`.

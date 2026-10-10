@@ -299,7 +299,7 @@ std::vector<uint8_t> preprocessImageForResNet(
       cv::Size(224, 224),
       0,
       0,
-      cv::INTER_LINEAR);
+      cv::INTER_CUBIC);
 
 
   // ----------------------------------------------------------
@@ -942,36 +942,7 @@ class ResNet18HoloscanApp
 
 
     // --------------------------------------------------------
-    // Dataset root.
-    // --------------------------------------------------------
-
-    const char* env_root =
-        std::getenv(
-            "ULTRASOUND_ROOT");
-
-
-    if (env_root == nullptr ||
-        std::string(env_root).empty()) {
-
-      throw std::runtime_error(
-          "ULTRASOUND_ROOT environment "
-          "variable is not set.");
-    }
-
-
-    const std::string dataset_root =
-        env_root;
-
-
-    // --------------------------------------------------------
     // Number of measured images.
-    //
-    // Default:
-    //
-    // 10 warm-up
-    // 100 measured
-    //
-    // = 110 total images.
     // --------------------------------------------------------
 
     std::size_t measured_frames =
@@ -1005,13 +976,57 @@ class ResNet18HoloscanApp
 
 
     // --------------------------------------------------------
-    // Find real ultrasound images.
+    // Find ultrasound images or single-image input.
     // --------------------------------------------------------
 
-    g_stream_images =
-        collectImagePaths(
-            dataset_root,
-            requested_total);
+    const char* env_single_image =
+        std::getenv(
+            "ULTRASOUND_IMAGE_PATH");
+
+    const char* env_root =
+        std::getenv(
+            "ULTRASOUND_ROOT");
+
+    std::string dataset_root;
+
+    if (env_single_image != nullptr &&
+        std::string(env_single_image).size() > 0) {
+
+      const std::string single_path =
+          env_single_image;
+
+      if (!std::filesystem::exists(single_path)) {
+
+        throw std::runtime_error(
+            "ULTRASOUND_IMAGE_PATH file does not exist: " +
+            single_path);
+      }
+
+      g_stream_images.assign(
+          requested_total,
+          single_path);
+
+      dataset_root =
+          "Single Image / RF Sample: " +
+          single_path;
+
+    } else if (env_root != nullptr &&
+               std::string(env_root).size() > 0) {
+
+      dataset_root =
+          env_root;
+
+      g_stream_images =
+          collectImagePaths(
+              dataset_root,
+              requested_total);
+
+    } else {
+
+      throw std::runtime_error(
+          "Neither ULTRASOUND_IMAGE_PATH nor "
+          "ULTRASOUND_ROOT environment variable is set.");
+    }
 
 
     if (g_stream_images.size() <
@@ -1181,9 +1196,17 @@ int main(int argc, char** argv) {
       holoscan::make_application<
           ResNet18HoloscanApp>();
 
+  const char* env_config = std::getenv("HOLOSCAN_CONFIG_PATH");
+  std::string config_path = "resnet18.yaml";
+
+  if (argc > 1 && argv[1] != nullptr && std::strlen(argv[1]) > 0) {
+    config_path = argv[1];
+  } else if (env_config != nullptr && std::strlen(env_config) > 0) {
+    config_path = env_config;
+  }
 
   app->config(
-      "resnet18.yaml");
+      config_path);
 
 
   app->run();

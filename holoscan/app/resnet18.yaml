@@ -2,7 +2,7 @@ inference:
   backend: "trt"
 
   model_path_map:
-    resnet18: "/home/anurag-h/RealTimeMedicalImaging/holoscan/models/resnet18_busi.onnx"
+    resnet18: "../models/resnet18_busi.onnx"
 
   input_map:
     resnet18: ["data"]
