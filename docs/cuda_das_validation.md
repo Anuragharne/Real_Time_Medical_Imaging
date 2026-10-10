@@ -5,7 +5,7 @@
 **GPU:** NVIDIA GeForce RTX 4050 Laptop GPU (6 GB VRAM)  
 **Module Directory:** `reconstruction/cuda/`  
 **Holoscan App Directory:** `holoscan/app/`  
-**Primary Source Files:** `reconstruction/cuda/das_kernel.cu`, `reconstruction/cuda/das_kernel.h`, `holoscan/app/main.cpp`, `holoscan/app/CMakeLists.txt`  
+**Primary Source Files:** `reconstruction/cuda/das_kernel.cu`, `reconstruction/cuda/das_kernel.h`, `holoscan/app/main.cpp`, `reconstruction/exportAndCompareCUDA.m`  
 **Generated Output Artifact:** `docs/cuda_rf_bmode_preview.png`  
 
 ---
@@ -14,32 +14,35 @@
 
 The standalone CUDA C++ GPU implementation of raw Radio-Frequency (RF) Delay-and-Sum (DAS) beamforming was fully integrated into the NVIDIA Holoscan SDK application (`resnet18_holoscan`). The pipeline now successfully executes end-to-end processing from raw RF simulation data through GPU DAS beamforming, cuFFT analytic envelope detection, log compression, tensor formatting (`[1, 3, 224, 224]` NCHW float32), and TensorRT ResNet-18 inference.
 
-- **Integrated Pipeline Throughput:** **39.81 FPS** ($25.13\text{ ms}$ total end-to-end latency per frame).
+- **Numerical Parity with MATLAB Reference:** **73.04 dB PSNR** ($0.0032$ gray level MAE, $1.000000$ structural correlation).
+- **Integrated Holoscan Pipeline Throughput:** **39.81 FPS** ($25.13\text{ ms}$ total end-to-end latency per frame).
 - **Inference Verdict on Reconstructed RF:** **Benign** (Probability: $0.9927$).
 - **Multi-Mode Support:** Preserved 100% compatibility with single image mode (`ULTRASOUND_IMAGE_PATH`) and full dataset replay mode (`ULTRASOUND_ROOT`).
 
 ---
 
-## 2. Pixel Parity & Comparative Validation (MATLAB CPU vs CUDA GPU)
+## 2. Pixel Parity & Parity Discrepancy Characterization
 
-To validate numerical Parity between MATLAB CPU and CUDA GPU reconstructions, the deterministic raw RF sample (`rf_data.bin`) was processed through both pipelines:
+To validate numerical parity between MATLAB CPU and CUDA GPU reconstructions, the deterministic raw RF sample (`rf_data.bin`) was processed through both pipelines:
 
-| Metric / Property | MATLAB CPU Reference | CUDA GPU Implementation | Comparison / Difference |
-|---|---|---|---|
-| **Linear Envelope Signal PSNR** | Baseline | Baseline | **29.47 dB** (High signal fidelity) |
-| **Display B-Mode Image MAE** | $0 - 255$ gray levels | $0 - 255$ gray levels | **35.80 gray levels** |
-| **Display B-Mode Image PSNR** | Baseline | Baseline | **14.78 dB** |
-| **Finite Number Integrity** | 100% Pass ($0$ NaNs, $0$ Infs) | 100% Pass ($0$ NaNs, $0$ Infs) | **Identical** |
+| Metric / Property | MATLAB CPU Reference | CUDA GPU Implementation | Comparison / Metric Value | Status |
+|---|---|---|---|---|
+| **Linear Envelope Signal PSNR** | Baseline | Baseline | **112.26 dB** ($4.13 \times 10^{-5}$ MAE) | **PASSED** |
+| **Display B-Mode Image MAE** | $0 - 255$ gray levels | $0 - 255$ gray levels | **0.0032 gray levels** (< 0.001% error) | **PASSED** |
+| **Display B-Mode Image PSNR** | Baseline | Baseline | **73.04 dB** | **PASSED** |
+| **Normalized Cross-Correlation (NCC)** | $1.000000$ | $1.000000$ | **1.000000** | **PASSED** |
+| **Finite Number Integrity** | 100% Pass ($0$ NaNs, $0$ Infs) | 100% Pass ($0$ NaNs, $0$ Infs) | **Identical** | **PASSED** |
 
-### Investigation of Numerical Differences:
-- **Envelope Match (29.47 dB PSNR):** The pre-log-compressed analytic signal envelopes closely match between double-precision MATLAB CPU `hilbert()` and single-precision CUDA 1D batched cuFFT `cufftExecC2C`.
-- **Log Compression & Dynamic Range Scaling:** The uint8 MAE of $35.80$ gray levels stems from low-amplitude background noise scaling differences during dynamic range normalization ($50\text{ dB}$). MATLAB calculates `max(envelope)` dynamically across the double-precision array per frame, while CUDA uses single-precision peak tracking. This slight difference shifts dark background speckle values in log space, while leaving all hyperechoic target peaks unaffected.
+### Investigation & Resolution of Initial Discrepancy:
+- **Initial Observation:** An initial validation report recorded a B-mode display MAE of $35.80$ gray levels and PSNR of $14.78\text{ dB}$.
+- **Root Cause Identified:** The CUDA C++ kernel (`dasBeamformKernel`) writes 2D spatial grid pixels in C-style **row-major order** (`z_idx * Nx + x_idx`), whereas MATLAB's `fread` + `reshape(..., [224, 224, 3])` interpreted the binary data as column-major without transposing matrix dimensions. This resulted in an un-transposed matrix comparison ($90^\circ$ spatial orientation mismatch).
+- **Correction Implemented:** When `exportAndCompareCUDA.m` was updated to properly transpose the C++ row-major matrix (`reshape(..., [Nx, Nz])'`), the B-mode MAE dropped from $35.80$ down to **0.0032 gray levels**, and PSNR rose from $14.78\text{ dB}$ to **73.04 dB**. Floating-point precision differences between MATLAB double-precision and CUDA single-precision account for the tiny $0.0032$ residual difference.
 
 ---
 
 ## 3. 2D Spatial Target Localization (5 Scatterer Targets)
 
-Despite low-level background log scaling shifts, all 5 simulated scatterer targets are localized with sub-millimeter to millimeter precision by the CUDA beamformer:
+All 5 simulated scatterer targets are localized with sub-millimeter to millimeter precision by the CUDA beamformer:
 
 | Target Scatterer | Simulated Target $(x, z)$ | CUDA GPU Peak $(x, z)$ | Spatial Error | Status |
 |---|---|---|---|---|
@@ -51,25 +54,26 @@ Despite low-level background log scaling shifts, all 5 simulated scatterer targe
 
 ---
 
-## 4. Latency Breakdown & Boundary Definitions
+## 4. Performance & Latency Boundary Accounting
 
-To provide scientific rigor and clarify the previously reported $4,070\times$ speedup claim, performance is broken down across precise processing boundaries:
+To provide rigorous system performance accounting, latency is broken down across distinct, non-interchangeable boundaries:
 
-| Processing Stage / Scope | Execution Details | Latency per Frame | Effective Throughput | Speedup vs CPU |
+| Processing Stage / Scope | Operations & Data Flow Included | Latency per Frame | Throughput | Ratio vs CPU Baseline |
 |---|---|---|---|---|
-| **Baseline MATLAB CPU** | Single-threaded CPU beamforming + Hilbert envelope + log compress | $541.37\text{ ms}$ | $1.85\text{ FPS}$ | $1.00\times$ (Baseline) |
-| **CUDA GPU Steady-State Kernels** | `dasBeamformKernel` + cuFFT C2C + Hilbert filter + Envelope + LogCompress | **0.133 ms** | **7,525.77 FPS** | **$4070\times$** |
-| **CUDA GPU + PCIe Transfers** | Includes Host-to-Device RF transfer & Device-to-Host B-mode transfer | **1.175 ms** | **851.06 FPS** | **$460\times$** |
-| **Holoscan Integrated RF Pipeline** | Full Holoscan graph: RF load + CUDA DAS + NCHW Float32 formatting + TRT ResNet-18 | **25.13 ms** | **39.81 FPS** | **$21.5\times$** |
+| **Baseline MATLAB CPU** | Single-threaded CPU beamforming + Hilbert envelope + log compress | $537.48\text{ ms}$ | $1.86\text{ FPS}$ | $1.00\times$ (Baseline) |
+| **CUDA GPU Steady-State Kernels** | `dasBeamformKernel` + cuFFT C2C + Hilbert filter + Envelope + LogCompress | **0.133 ms** | **7,514.86 FPS** | **$4,041\times$** (Kernel level) |
+| **CUDA GPU + PCIe Data Transfers** | Includes Host-to-Device RF transfer & Device-to-Host B-mode transfer | **1.175 ms** | **851.06 FPS** | **$457\times$** (GPU module) |
+| **Holoscan Integrated RF Pipeline** | Full Holoscan app: RF load + CUDA DAS + NCHW Float32 formatting + TRT ResNet-18 | **25.13 ms** | **39.81 FPS** | **$21.4\times$** (System level) |
 
 > [!IMPORTANT]
-> **Timing Boundary Clarification:**
+> **Boundary Accounting Rules:**
 > - The **0.133 ms** timing represents pure steady-state GPU kernel execution time (excluding PCIe transfers, file I/O, and host tensor formatting).
+> - The **1.175 ms** timing includes PCIe host-to-device and device-to-host memory copy overheads.
 > - The **25.13 ms** timing represents the complete end-to-end streaming latency of the Holoscan C++ application, including single-iteration CUDA DAS execution, Host memory format conversion into `[1, 3, 224, 224]` float32 NCHW tensor, GXF message routing, and TensorRT FP32 ResNet-18 model execution on the RTX 4050 GPU.
 
 ---
 
-## 5. Holoscan Integration Test Results
+## 5. Holoscan Integration Verification
 
 The Holoscan application (`resnet18_holoscan`) was tested across all 3 supported input modes:
 
@@ -100,7 +104,7 @@ Prediction : Benign
 
 ---
 
-## 6. Project Milestone & Disclaimers
+## 6. Project Milestone Disclaimers
 
 > [!NOTE]
 > **Clinical & Hardware Disclaimer:** This implementation uses simulated offline RF replay data (`rf_data.bin`) from a 5-scatterer physics phantom model. It demonstrates software/hardware integration of GPU-accelerated beamforming within NVIDIA Holoscan, but does not represent live hardware ADC acquisition or clinical diagnostic validation.

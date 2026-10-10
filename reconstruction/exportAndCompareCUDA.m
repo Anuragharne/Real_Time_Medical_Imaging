@@ -77,10 +77,13 @@ fid = fopen(bmodeCudaPath, 'rb');
 bModeCUDA_raw = fread(fid, [3, Nz * Nx], 'uint8=>uint8')';
 fclose(fid);
 
-bModeCUDA = reshape(bModeCUDA_raw, [Nz, Nx, 3]);
+% C++ d_bmode is row-major (z * Nx + x) x 3 channels.
+% Reshape([Nx, Nz])' transposes row-major C++ rows to MATLAB column-major layout.
+grayCUDA_2D = reshape(bModeCUDA_raw(:, 1), [Nx, Nz])';
+bModeCUDA = cat(3, grayCUDA_2D, grayCUDA_2D, grayCUDA_2D);
 
 fid = fopen(envCudaPath, 'rb');
-envCUDA = reshape(fread(fid, [Nz, Nx], 'float32=>double'), [Nz, Nx]);
+envCUDA = reshape(fread(fid, [Nx, Nz], 'float32=>double'), [Nx, Nz])';
 fclose(fid);
 
 % Integrity Checks
