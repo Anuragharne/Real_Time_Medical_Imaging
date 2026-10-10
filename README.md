@@ -98,6 +98,8 @@ STREAM_MEASURED=5 ./scripts/run_holoscan.sh
 
 | Variable | Description | Default |
 |---|---|---|
+| `ULTRASOUND_RF_PATH` | Path to raw RF sample binary file (`rf_data.bin`) for CUDA GPU DAS reconstruction mode | Unset (uses dataset or single image mode) |
+| `ULTRASOUND_IMAGE_PATH` | Path to single PNG/JPG image file for single-image replay mode | Unset |
 | `ULTRASOUND_ROOT` | Path to BUSI dataset directory containing `benign/`, `malignant/`, `normal/` subdirectories | `$PROJECT_ROOT/data/Dataset_BUSI_with_GT` |
 | `STREAM_MEASURED` | Number of frames to benchmark after initial 10 warm-up frames | `100` |
 | `HOLOSCAN_MODEL_PATH` | Path to fine-tuned ResNet-18 ONNX model | `$PROJECT_ROOT/holoscan/models/resnet18_busi.onnx` |
