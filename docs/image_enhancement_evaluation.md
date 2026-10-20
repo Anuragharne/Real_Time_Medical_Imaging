@@ -57,3 +57,10 @@ CLAHE was evaluated on three representative BUSI ultrasound images (`benign (1).
 1. **Root Cause Analysis:** ResNet-18 features learned during fine-tuning correspond directly to native B-mode ultrasound intensity distributions, acoustic attenuation shadows, and speckle noise. CLAHE's local contrast stretching alters these low-level feature representations, destroying acoustic attenuation cues vital for malignant diagnosis.
 2. **Production Pipeline Decision:** Do **not** integrate CLAHE into `holoscan/app/main.cpp`. The C++ Holoscan pipeline will maintain the validated unenhanced B-mode image preprocessing path (`cv::imread` $\rightarrow$ `COLOR_BGR2GRAY` $\rightarrow$ `cv::INTER_CUBIC` resize).
 3. **Preserved Fallback:** The unenhanced baseline remains 100% operational, fully verified, and ready for RF-reconstruction integration in subsequent checkpoints.
+
+---
+
+## 6. Subsequent Alternative Enhancement Evaluation (Wiener Filter)
+
+In Checkpoint B, a 2D adaptive Wiener filter (`wiener2`) was evaluated as an alternative enhancement candidate on the same three BUSI samples. While Wiener filtering avoided flipping classification labels (unlike CLAHE), it decreased malignant diagnostic confidence by $0.11\%$ (for $[3 \times 3]$) and $5.60\%$ (for $[5 \times 5]$) due to boundary softening without yielding clinical benefit. Consequently, both CLAHE and Wiener filtering are formally rejected in favor of retaining the unenhanced native B-mode baseline. Full experimental data and metrics are detailed in [checkpoint_b_enhancement_gpu_coder.md](file:///c:/Users/anura/Desktop/RealTimeMedicalImaging/docs/checkpoint_b_enhancement_gpu_coder.md).
+
