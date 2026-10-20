@@ -1,0 +1,212 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 820" width="100%" height="100%" style="background:#0f172a; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="grad-win" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="grad-linux" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="grad-cuda" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14532d" />
+      <stop offset="100%" stop-color="#064e3b" />
+    </linearGradient>
+    <linearGradient id="grad-trt" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0369a1" />
+      <stop offset="100%" stop-color="#0c4a6e" />
+    </linearGradient>
+    <linearGradient id="grad-holoscan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#312e81" />
+      <stop offset="100%" stop-color="#1e1b4b" />
+    </linearGradient>
+
+    <!-- Markers -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#38bdf8" />
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#4ade80" />
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#fbbf24" />
+    </marker>
+    
+    <!-- Filter for soft shadow -->
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Title Banner -->
+  <text x="650" y="42" text-anchor="middle" fill="#f8fafc" font-size="22" font-weight="700" letter-spacing="0.5">Real-Time Medical Ultrasound System Architecture</text>
+  <text x="650" y="68" text-anchor="middle" fill="#94a3b8" font-size="13">Implemented &amp; Verified Architecture: MATLAB Desktop vs. Production Linux NVIDIA Holoscan Pipeline</text>
+
+  <!-- ======================================================== -->
+  <!-- LEFT PANEL: WINDOWS / MATLAB DESKTOP ENVIRONMENT         -->
+  <!-- ======================================================== -->
+  <g transform="translate(40, 95)" filter="url(#shadow)">
+    <rect width="420" height="695" rx="12" fill="url(#grad-win)" stroke="#334155" stroke-width="2"/>
+    <rect width="420" height="42" rx="12" fill="#1e293b"/>
+    <text x="210" y="27" text-anchor="middle" fill="#38bdf8" font-size="15" font-weight="700">Windows 11 / MATLAB R2025b Desktop</text>
+
+    <!-- Block 1: Offline Training -->
+    <g transform="translate(20, 60)">
+      <rect width="380" height="85" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+      <text x="15" y="24" fill="#f1f5f9" font-size="13" font-weight="700">ResNet-18 Classifier Training (Offline)</text>
+      <text x="15" y="44" fill="#94a3b8" font-size="11">Dataset: BUSI (780 images: benign, malignant, normal)</text>
+      <text x="15" y="60" fill="#94a3b8" font-size="11">Artifact: <tspan fill="#38bdf8" font-family="monospace">models/netResNet.mat</tspan> (DAGNetwork)</text>
+      <text x="15" y="76" fill="#cbd5e1" font-size="11">Historical Holdout Accuracy: <tspan fill="#4ade80" font-weight="700">80.17%</tspan> (93/116 test images)</text>
+    </g>
+
+    <!-- Block 2: MATLAB GUI & predict -->
+    <g transform="translate(20, 165)">
+      <rect width="380" height="95" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+      <text x="15" y="24" fill="#f1f5f9" font-size="13" font-weight="700">MATLAB Interactive App &amp; Inference</text>
+      <text x="15" y="44" fill="#94a3b8" font-size="11">UI: <tspan fill="#38bdf8" font-family="monospace">inference/ultrasoundApp.m</tspan> (Dynamic Path)</text>
+      <text x="15" y="60" fill="#94a3b8" font-size="11">Inference: Standard <tspan fill="#38bdf8" font-family="monospace">predict()</tspan> (8.29 ms latency)</text>
+      <text x="15" y="76" fill="#94a3b8" font-size="11">Input: Unenhanced BUSI B-mode Ultrasound PNG</text>
+      <text x="15" y="90" fill="#f87171" font-size="10">Note: CLAHE &amp; Wiener filtering evaluated and rejected</text>
+    </g>
+
+    <!-- Block 3: Windows GPU Coder MEX -->
+    <g transform="translate(20, 280)">
+      <rect width="380" height="95" rx="8" fill="#1e293b" stroke="#059669" stroke-width="1.5"/>
+      <text x="15" y="24" fill="#4ade80" font-size="13" font-weight="700">Windows GPU Coder MEX Acceleration</text>
+      <text x="15" y="44" fill="#94a3b8" font-size="11">Entry point: <tspan fill="#38bdf8" font-family="monospace">acceleration/resnetPredict.m</tspan></text>
+      <text x="15" y="60" fill="#94a3b8" font-size="11">Binary: <tspan fill="#4ade80" font-family="monospace">resnetPredict_mex.mexw64</tspan> (MSVC + CUDA 12.1)</text>
+      <text x="15" y="76" fill="#cbd5e1" font-size="11">Performance: <tspan fill="#4ade80" font-weight="700">2.57 ms/frame (388.9 FPS)</tspan> (3.22x speedup)</text>
+      <text x="15" y="90" fill="#cbd5e1" font-size="11">Parity with MATLAB: Score diff &lt; 6.0e-7 (Passed)</text>
+    </g>
+
+    <!-- Block 4: MATLAB RF Simulation & DAS Reference -->
+    <g transform="translate(20, 395)">
+      <rect width="380" height="110" rx="8" fill="#1e293b" stroke="#eab308" stroke-width="1.5"/>
+      <text x="15" y="24" fill="#fde047" font-size="13" font-weight="700">MATLAB RF Simulation &amp; DAS Reference</text>
+      <text x="15" y="44" fill="#94a3b8" font-size="11">Simulation: <tspan fill="#38bdf8" font-family="monospace">reconstruction/simulateRFData.m</tspan></text>
+      <text x="15" y="60" fill="#94a3b8" font-size="11">Reference DAS: <tspan fill="#38bdf8" font-family="monospace">reconstruction/reconstructDAS.m</tspan> (541 ms)</text>
+      <text x="15" y="76" fill="#94a3b8" font-size="11">Export Artifacts: <tspan fill="#fde047" font-family="monospace">rf_data.bin</tspan> (598.5 KB) &amp; <tspan fill="#fde047" font-family="monospace">params.bin</tspan></text>
+      <text x="15" y="92" fill="#94a3b8" font-size="11">Validation: <tspan fill="#38bdf8" font-family="monospace">reconstruction/exportAndCompareCUDA.m</tspan></text>
+      <text x="15" y="106" fill="#4ade80" font-size="11">Parity: <tspan font-weight="700">73.04 dB PSNR</tspan> | MAE: 0.0032 gray levels</text>
+    </g>
+
+    <!-- Block 5: Deployment Boundary Warning -->
+    <g transform="translate(20, 525)">
+      <rect width="380" height="145" rx="8" fill="#18181b" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4 4"/>
+      <text x="15" y="24" fill="#f87171" font-size="13" font-weight="700">Deployment Boundary &amp; Toolchain Truth</text>
+      <text x="15" y="44" fill="#e2e8f0" font-size="11">&#x2022; Windows MEX binary (.mexw64) cannot run in Linux Holoscan.</text>
+      <text x="15" y="62" fill="#e2e8f0" font-size="11">&#x2022; GPU Coder Linux export demonstrated via standalone C++</text>
+      <text x="25" y="78" fill="#e2e8f0" font-size="11">PoC (<tspan fill="#38bdf8" font-family="monospace">libgpusimpletest.a</tspan>), but NOT integrated into Holoscan.</text>
+      <text x="15" y="96" fill="#e2e8f0" font-size="11">&#x2022; Holoscan production uses <tspan fill="#4ade80" font-weight="700">Native CUDA DAS</tspan> and <tspan fill="#38bdf8" font-weight="700">TensorRT</tspan>.</text>
+      <text x="15" y="114" fill="#fde047" font-size="11">&#x2022; Model export: ResNet-18 ONNX (<tspan font-family="monospace">resnet18_busi.onnx</tspan>)</text>
+      <text x="25" y="130" fill="#94a3b8" font-size="11">transferred to Linux Holoscan directory.</text>
+    </g>
+  </g>
+
+  <!-- Cross-Boundary Arrow (ONNX Model Transfer) -->
+  <path d="M 460 635 L 530 635 L 530 390 L 590 390" fill="none" stroke="#fde047" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow-amber)"/>
+  <text x="525" y="495" fill="#fde047" font-size="11" font-weight="600" text-anchor="middle" transform="rotate(-90 525 495)">ONNX Model Transfer</text>
+
+  <!-- Cross-Boundary Arrow (Simulated RF Binary Transfer) -->
+  <path d="M 460 455 L 500 455 L 500 240 L 590 240" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+  <text x="495" y="340" fill="#38bdf8" font-size="11" font-weight="600" text-anchor="middle" transform="rotate(-90 495 340)">Prerecorded RF Binaries</text>
+
+  <!-- ======================================================== -->
+  <!-- RIGHT PANEL: LINUX HOLOSCAN PRODUCTION PIPELINE          -->
+  <!-- ======================================================== -->
+  <g transform="translate(600, 95)" filter="url(#shadow)">
+    <rect width="660" height="695" rx="12" fill="url(#grad-linux)" stroke="#4338ca" stroke-width="2"/>
+    <rect width="660" height="42" rx="12" fill="#1e1b4b"/>
+    <text x="330" y="27" text-anchor="middle" fill="#818cf8" font-size="15" font-weight="700">Linux Holoscan Deployment Pipeline (WSL2 Ubuntu 22.04 / RTX 4050)</text>
+
+    <!-- Dual Input Selection Block -->
+    <g transform="translate(20, 55)">
+      <rect width="620" height="90" rx="8" fill="#1e1b4b" stroke="#6366f1" stroke-width="1.5"/>
+      <text x="15" y="22" fill="#c7d2fe" font-size="12" font-weight="700">Input Mode Selection (Environment Configured)</text>
+      
+      <!-- Option A -->
+      <rect x="15" y="32" width="285" height="48" rx="6" fill="#0f172a" stroke="#38bdf8" stroke-width="1"/>
+      <text x="25" y="50" fill="#38bdf8" font-size="11" font-weight="700">Mode A: CUDA RF DAS Replay</text>
+      <text x="25" y="68" fill="#94a3b8" font-size="10"><tspan fill="#f1f5f9" font-family="monospace">rf_data.bin</tspan> + <tspan fill="#f1f5f9" font-family="monospace">params.bin</tspan> (Simulated RF)</text>
+
+      <!-- Option B -->
+      <rect x="320" y="32" width="285" height="48" rx="6" fill="#0f172a" stroke="#a855f7" stroke-width="1"/>
+      <text x="330" y="50" fill="#c084fc" font-size="11" font-weight="700">Mode B: Single Image / Dataset Replay</text>
+      <text x="330" y="68" fill="#94a3b8" font-size="10"><tspan fill="#f1f5f9" font-family="monospace">rf_bmode_preview.png</tspan> or BUSI PNG sequence</text>
+    </g>
+
+    <!-- Holoscan Graph Container -->
+    <g transform="translate(20, 160)">
+      <rect width="620" height="515" rx="10" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+      <text x="20" y="26" fill="#38bdf8" font-size="13" font-weight="700">Holoscan Application Graph (<tspan font-family="monospace">ResNet18HoloscanApp</tspan>)</text>
+
+      <!-- Operator 1: ImageSequenceSourceOp -->
+      <g transform="translate(20, 42)">
+        <rect width="580" height="150" rx="8" fill="url(#grad-cuda)" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="15" y="24" fill="#f0fdf4" font-size="13" font-weight="700">Operator 1: ImageSequenceSourceOp ("source")</text>
+        <text x="15" y="44" fill="#bbf7d0" font-size="11">Condition: <tspan font-family="monospace">CountCondition(g_total_frames)</tspan> | Resource: <tspan font-family="monospace">UnboundedAllocator</tspan></text>
+        
+        <rect x="15" y="55" width="265" height="82" rx="6" fill="#064e3b" stroke="#10b981" stroke-width="1"/>
+        <text x="25" y="73" fill="#6ee7b7" font-size="11" font-weight="700">Native CUDA DAS Path (Mode A)</text>
+        <text x="25" y="90" fill="#d1fae5" font-size="10">&#x2022; <tspan font-family="monospace">runDASBeamformingCUDA()</tspan></text>
+        <text x="25" y="104" fill="#d1fae5" font-size="10">&#x2022; cuFFT Hilbert Envelope Detection</text>
+        <text x="25" y="118" fill="#d1fae5" font-size="10">&#x2022; Log compression &amp; dynamic range (40 dB)</text>
+        <text x="25" y="130" fill="#a7f3d0" font-size="10">&#x2022; Kernel Latency: <tspan font-weight="700">0.133 ms</tspan> (1.18 ms module)</text>
+
+        <rect x="300" y="55" width="265" height="82" rx="6" fill="#1e1b4b" stroke="#818cf8" stroke-width="1"/>
+        <text x="310" y="73" fill="#c7d2fe" font-size="11" font-weight="700">OpenCV Image Preprocess (Mode B)</text>
+        <text x="310" y="90" fill="#e0e7ff" font-size="10">&#x2022; <tspan font-family="monospace">cv::imread(..., IMREAD_UNCHANGED)</tspan></text>
+        <text x="310" y="104" fill="#e0e7ff" font-size="10">&#x2022; <tspan font-family="monospace">cv::cvtColor(COLOR_BGR2GRAY)</tspan></text>
+        <text x="310" y="118" fill="#e0e7ff" font-size="10">&#x2022; <tspan font-family="monospace">cv::resize(INTER_CUBIC)</tspan> to 224&#xd7;224</text>
+        <text x="310" y="130" fill="#e0e7ff" font-size="10">&#x2022; 3-channel duplicate [1, 3, 224, 224]</text>
+      </g>
+
+      <!-- Flow 1 Arrow -->
+      <path d="M 310 192 L 310 220" fill="none" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#arrow)"/>
+      <text x="320" y="210" fill="#38bdf8" font-size="10" font-weight="600">GXF Message: { "out", "receivers" } | Tensor: "data" [1, 3, 224, 224] Float32</text>
+
+      <!-- Operator 2: InferenceOp -->
+      <g transform="translate(20, 225)">
+        <rect width="580" height="110" rx="8" fill="url(#grad-trt)" stroke="#0284c7" stroke-width="1.5"/>
+        <text x="15" y="24" fill="#f0f9ff" font-size="13" font-weight="700">Operator 2: holoscan::ops::InferenceOp ("inference")</text>
+        <text x="15" y="44" fill="#bae6fd" font-size="11">Backend: <tspan font-weight="700">NVIDIA TensorRT (TRT)</tspan> | Engine: <tspan font-family="monospace">resnet18_busi.engine.fp32</tspan></text>
+        
+        <rect x="15" y="54" width="550" height="46" rx="6" fill="#082f49" stroke="#38bdf8" stroke-width="1"/>
+        <text x="25" y="72" fill="#e0f2fe" font-size="11">Input Binding: <tspan fill="#38bdf8" font-family="monospace">"data"</tspan> [1, 3, 224, 224] Float32 (Host/Device pinned)</text>
+        <text x="25" y="88" fill="#e0f2fe" font-size="11">Output Binding: <tspan fill="#4ade80" font-family="monospace">"softmax1000Output"</tspan> [1, 3] Float32 (Softmax class scores)</text>
+      </g>
+
+      <!-- Flow 2 Arrow -->
+      <path d="M 310 335 L 310 365" fill="none" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#arrow)"/>
+      <text x="320" y="354" fill="#38bdf8" font-size="10" font-weight="600">GXF Message: { "transmitter", "in" } | Tensor: "softmax1000Output" [1, 3]</text>
+
+      <!-- Operator 3: ResultOp -->
+      <g transform="translate(20, 370)">
+        <rect width="580" height="130" rx="8" fill="#1e293b" stroke="#64748b" stroke-width="1.5"/>
+        <text x="15" y="24" fill="#f8fafc" font-size="13" font-weight="700">Operator 3: ResultOp ("result")</text>
+        <text x="15" y="44" fill="#cbd5e1" font-size="11">Function: Softmax classification &amp; end-to-end steady-state throughput benchmark</text>
+        
+        <rect x="15" y="54" width="265" height="65" rx="6" fill="#0f172a" stroke="#38bdf8" stroke-width="1"/>
+        <text x="25" y="72" fill="#38bdf8" font-size="11" font-weight="700">Classification Output</text>
+        <text x="25" y="88" fill="#e2e8f0" font-size="10">&#x2022; Benign score [<tspan font-family="monospace">scores[0]</tspan>]</text>
+        <text x="25" y="102" fill="#e2e8f0" font-size="10">&#x2022; Malignant score [<tspan font-family="monospace">scores[1]</tspan>]</text>
+        <text x="25" y="114" fill="#e2e8f0" font-size="10">&#x2022; Normal score [<tspan font-family="monospace">scores[2]</tspan>]</text>
+
+        <rect x="300" y="54" width="265" height="65" rx="6" fill="#0f172a" stroke="#4ade80" stroke-width="1"/>
+        <text x="310" y="72" fill="#4ade80" font-size="11" font-weight="700">Timing &amp; Benchmark Reporting</text>
+        <text x="310" y="88" fill="#e2e8f0" font-size="10">&#x2022; Warm-up exclusion: 10 frames</text>
+        <text x="310" y="102" fill="#e2e8f0" font-size="10">&#x2022; RF Replay: <tspan fill="#4ade80" font-weight="700">4.05 ms/frame (246.7 FPS)</tspan></text>
+        <text x="310" y="114" fill="#e2e8f0" font-size="10">&#x2022; Image Replay: 31.53 ms/frame (31.7 FPS)</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Bottom Legend / Disclaimer -->
+  <g transform="translate(40, 795)">
+    <text x="0" y="12" fill="#64748b" font-size="11">
+      <tspan fill="#fde047" font-weight="700">Research &amp; Demonstration Notice:</tspan> 
+      RF signal is prerecorded/simulated (not live hardware ADC). Synthetic RF predictions are out-of-domain for the BUSI clinical classifier. System is designed for scientific computing and real-time streaming demonstration.
+    </text>
+  </g>
+</svg>

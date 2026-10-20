@@ -1,169 +1,243 @@
 # Real-Time Acceleration for Medical Image Processing
 
-A hybrid MATLAB / C++ NVIDIA Holoscan system for breast ultrasound image processing, physics-based Radio-Frequency (RF) Delay-and-Sum (DAS) beamforming, transfer learning classification, and TensorRT GPU acceleration.
+A hybrid MATLAB R2025b and C++ NVIDIA Holoscan system for breast ultrasound image processing, physics-based Radio-Frequency (RF) Delay-and-Sum (DAS) beamforming, transfer learning classification, and TensorRT GPU acceleration.
 
 ---
 
 ## 1. Executive Summary & Project Achievements
 
-This project implements an end-to-end AI-assisted breast ultrasound classification and reconstruction system using **MATLAB R2025b** and the **NVIDIA Holoscan SDK (v4.6)** powered by **CUDA 13.4** and **TensorRT**.
+This repository implements an end-to-end research and demonstration system for medical ultrasound image processing and beamforming acceleration. It combines **MATLAB R2025b** (Windows) for algorithm prototyping, RF simulation, and model fine-tuning with **NVIDIA Holoscan SDK (v4.6)** (Linux / WSL2) powered by **CUDA 13.4** and **TensorRT** for high-throughput streaming deployment on an NVIDIA GeForce RTX 4050 Laptop GPU.
 
 ### Key System Highlights:
-- **Transfer Learning Classifier:** ResNet-18 fine-tuned on the BUSI (Breast Ultrasound Images) dataset, classifying ultrasound scans into 3 categories (**Benign**, **Malignant**, **Normal**). Historically reported test accuracy on the held-out split is **80.17%** (Benign F1: 83.47%, Malignant F1: 81.97%, Normal F1: 68.18%).
-- **GPU-Accelerated DAS Beamforming:** Custom CUDA C++ Delay-and-Sum (DAS) beamformer executing parallel delay calculation, fractional sample interpolation, 1D batched cuFFT Hilbert transform, and log compression.
-- **Parity Verified against MATLAB CPU:** Achieved **73.04 dB PSNR** ($0.0032$ gray levels MAE, $1.000000$ structural correlation) between MATLAB CPU double-precision reference and CUDA GPU single-precision beamforming.
-- **NVIDIA Holoscan C++ Pipeline:** Integrated streaming application supporting live CUDA RF reconstruction, single-image replay, and dataset streaming directly into TensorRT ResNet-18 inference at **39.81 FPS** ($25.13\text{ ms}$ latency).
+- **Transfer Learning Classifier:** ResNet-18 fine-tuned on the Breast Ultrasound Images (BUSI) dataset (780 clinical images across **Benign**, **Malignant**, and **Normal** classes). Historically reported test accuracy on the held-out split is **80.17%** (Benign F1: 83.47%, Malignant F1: 81.97%, Normal F1: 68.18%).
+- **Native GPU DAS Beamforming:** Custom CUDA C++ Delay-and-Sum (DAS) beamformer ([`das_kernel.cu`](file:///c:/Users/anura/Desktop/RealTimeMedicalImaging/reconstruction/cuda/das_kernel.cu)) executing parallel delay calculation, sub-sample parabolic interpolation, batched 1D cuFFT Hilbert transform for analytic envelope detection, and logarithmic compression in **0.133 ms kernel execution time** ($1.175\text{ ms}$ including PCIe memory transfers).
+- **Parity Verified against MATLAB CPU:** Achieved **73.04 dB B-mode PSNR** ($0.0032$ gray-level MAE on a $0\text{--}255$ scale, $1.000000$ Normalized Cross-Correlation) and **112.26 dB linear-envelope PSNR** between MATLAB CPU double-precision reference code and CUDA single-precision beamforming.
+- **NVIDIA Holoscan Streaming Application:** Modular C++ application ([`main.cpp`](file:///c:/Users/anura/Desktop/RealTimeMedicalImaging/holoscan/app/main.cpp)) supporting live simulated RF replay, single-image replay, and dataset streaming directly into a TensorRT FP32 execution engine.
+- **Interactive MATLAB Desktop GUI:** Portable desktop application ([`ultrasoundApp.m`](file:///c:/Users/anura/Desktop/RealTimeMedicalImaging/inference/ultrasoundApp.m)) featuring dynamic path resolution and single-click diagnostic inference.
+- **Architecture & Demonstration Guides:** Complete vector architecture diagram ([`pipeline_architecture.svg`](file:///c:/Users/anura/Desktop/RealTimeMedicalImaging/docs/pipeline_architecture.svg)), operator dataflow specifications ([`pipeline_architecture.md`](file:///c:/Users/anura/Desktop/RealTimeMedicalImaging/docs/pipeline_architecture.md)), and reproducible demonstration run guide with shot list ([`demo_run_guide.md`](file:///c:/Users/anura/Desktop/RealTimeMedicalImaging/docs/demo_run_guide.md)).
 
 ---
 
-## 2. System Architecture & Component Responsibilities
+## 2. System Architecture & Topology
 
-The system is architected across a hybrid Windows / Linux (WSL2) environment:
+The system separates offline development and desktop simulation from Linux production streaming:
 
 ```text
-                                +-----------------------------------+
-                                |      Simulated RF Data / BUSI     |
-                                +-----------------------------------+
-                                                  |
-                     +----------------------------+----------------------------+
-                     |                                                         |
-                     v                                                         v
-        +--------------------------+                              +--------------------------+
-        |  MATLAB R2025b (Windows) |                              |  NVIDIA Holoscan (WSL2)  |
-        +--------------------------+                              +--------------------------+
-        | • Physics RF Signal Sim  |                              | • Custom CUDA C++ DAS    |
-        | • CPU DAS Reference      |                              | • cuFFT Envelope Detect  |
-        | • Model Fine-Tuning      |                              | • Float32 NCHW Tensor    |
-        | • GPU Coder MEX Valid.   |                              | • TensorRT Engine Infer. |
-        | • Interactive MATLAB GUI |                              | • 39.81 FPS End-to-End   |
-        +--------------------------+                              +--------------------------+
++---------------------------------------------------------------------------------------+
+|                                    DATA SOURCES                                       |
+|  • BUSI Clinical B-Mode Dataset (780 PNGs)  • Prerecorded Simulated RF (rf_data.bin)  |
++---------------------------------------------------------------------------------------+
+                                           |
+         +---------------------------------+---------------------------------+
+         v                                                                   v
++------------------------------------+             +------------------------------------+
+|  Windows 11 / MATLAB R2025b        |             |  Linux WSL2 Ubuntu 22.04 LTS       |
+|  (Prototyping & Desktop GUI)       |             |  (Production Streaming Pipeline)   |
++------------------------------------+             +------------------------------------+
+| • ResNet-18 DAGNetwork Fine-Tuning |             | • NVIDIA Holoscan SDK 4.6 (C++)    |
+| • Physics Acoustic RF Simulation   |             | • Native CUDA DAS (das_kernel.cu)  |
+| • Reference CPU DAS (541 ms)       |             | • cuFFT Hilbert Envelope Detection |
+| • GPU Coder Windows MEX (2.57 ms)  |             | • CUDA-Pinned Host GXF Tensors     |
+| • Desktop GUI (ultrasoundApp.m)    |             | • TensorRT FP32 Engine Inference   |
+| • Parity Script (exportAndCompare) |             | • Up to 246 FPS Streaming Rate     |
++------------------------------------+             +------------------------------------+
 ```
 
-### Environment Responsibilities:
-- **Windows (MATLAB R2025b):** Used for baseline CNN architecture definition, ResNet-18 transfer learning model host (`models/netResNet.mat`), physics-based RF acoustic phantom simulation (`simulateRFData.m`), reference CPU beamforming (`reconstructDAS.m`), GPU Coder MEX validation, CLAHE enhancement evaluation, and interactive MATLAB GUI (`inference/ultrasoundApp.m`).
-- **Linux / WSL2 (Ubuntu 22.04 LTS):** Production deployment environment running C++ NVIDIA Holoscan SDK 4.6, CUDA 13.4, and TensorRT. Executes native CUDA DAS kernels (`das_kernel.cu`) and feeds NCHW float32 tensors (`[1, 3, 224, 224]`) directly into TensorRT inference engine on an NVIDIA GeForce RTX 4050 Laptop GPU.
+Detailed visual diagrams and operator specifications:
+- [Pipeline Architecture Diagram (SVG)](file:///c:/Users/anura/Desktop/RealTimeMedicalImaging/docs/pipeline_architecture.svg)
+- [Operator Flow Documentation (Markdown & Mermaid)](file:///c:/Users/anura/Desktop/RealTimeMedicalImaging/docs/pipeline_architecture.md)
 
 ---
 
-## 3. Supported Pipeline Input Modes
+## 3. Repository Structure
 
-The C++ Holoscan application (`resnet18_holoscan`) supports three distinct streaming input paths via environment variables:
-
-| Input Mode | Environment Variable | Input Source | Latency / Frame | Throughput | ResNet-18 Prediction |
-|---|---|---|---|---|---|
-| **CUDA RF DAS Reconstruct** | `ULTRASOUND_RF_PATH` | `reconstruction/cuda/rf_data.bin` | **25.13 ms** | **39.81 FPS** | **Benign** ($0.9927$) |
-| **Single Image Replay** | `ULTRASOUND_IMAGE_PATH` | `docs/rf_bmode_preview.png` | **22.35 ms** | **44.73 FPS** | **Benign** ($0.9967$) |
-| **BUSI Dataset Replay** | `ULTRASOUND_ROOT` | `data/Dataset_BUSI_with_GT` | **94.52 ms** | **10.58 FPS** | **Normal** ($0.9999$) |
+```text
+RealTimeMedicalImaging/
+├── acceleration/                   # MATLAB GPU acceleration & Coder artifacts
+│   ├── gpuSimpleTest.m             # Test function for GPU Coder validation
+│   ├── gpuSimpleTest_mex.mexw64    # Compiled Windows MEX test binary
+│   ├── resnetPredict.m             # GPU Coder entry point for ResNet-18
+│   └── resnetPredict_mex.mexw64    # Validated Windows GPU Coder MEX (3.22x speedup)
+├── data/                           # Evaluation & validation data
+│   └── Dataset_BUSI_with_GT/       # Breast Ultrasound Images dataset (benign/malignant/normal)
+├── docs/                           # Technical reports, architecture diagrams & run guides
+│   ├── baseline_benchmark.md       # Initial classifier benchmarks & environment audit
+│   ├── checkpoint_b_enhancement_gpu_coder.md # Wiener filter evaluation & Linux GPU Coder audit
+│   ├── cuda_das_validation.md      # CUDA DAS kernel benchmarking & profiling report
+│   ├── demo_run_guide.md           # Reproducible demonstration run guide & recording shot list
+│   ├── gpu_coder_validation.md     # Windows GPU Coder MEX validation & Linux analysis
+│   ├── image_enhancement_evaluation.md # CLAHE & Wiener filter evaluation report
+│   ├── pipeline_architecture.md    # System architecture & Holoscan operator specifications
+│   ├── pipeline_architecture.svg   # Vector architecture & dataflow diagram
+│   ├── rf_bmode_preview.png        # Reference reconstructed B-mode preview image
+│   └── rf_reconstruction.md        # Physics RF simulation & CPU DAS reconstruction report
+├── holoscan/                       # NVIDIA Holoscan deployment tree
+│   ├── app/
+│   │   ├── CMakeLists.txt          # CMake configuration for Holoscan C++ application
+│   │   ├── main.cpp                # Streaming application & GXF operators
+│   │   └── resnet18.yaml           # Operator inference parameter configuration
+│   └── models/
+│       └── resnet18_busi.onnx      # ONNX export of fine-tuned ResNet-18 model
+├── inference/                      # MATLAB inference & GUI
+│   ├── predictUltrasound.m         # Portable CLI inference script
+│   └── ultrasoundApp.m             # Standalone interactive MATLAB desktop GUI
+├── models/                         # Trained model binaries
+│   ├── createCNN.m                 # 3-layer baseline CNN architecture definition
+│   └── netResNet.mat               # Fine-tuned ResNet-18 DAGNetwork
+├── preprocessing/                  # Preprocessing utilities
+│   ├── augmentData.m               # Data augmentation pipeline
+│   └── preprocessImage.m           # Standard grayscale resize & channel replicate
+├── reconstruction/                 # RF simulation & DAS beamforming
+│   ├── exportAndCompareCUDA.m      # Canonical MATLAB vs. CUDA numerical parity validation
+│   ├── reconstructDAS.m            # Reference MATLAB CPU Delay-and-Sum beamforming
+│   ├── simulateRFData.m            # 5-scatterer acoustic phantom RF signal simulator
+│   ├── validateReconstruction.m    # Reconstruction validation test script
+│   └── cuda/                       # Native CUDA C++ beamformer source
+│       ├── build_cuda.sh           # Standalone CUDA build script
+│       ├── das_kernel.cu           # GPU DAS beamformer & cuFFT Hilbert envelope kernel
+│       ├── das_kernel.h            # C++ API header for CUDA DAS module
+│       ├── main_das_cuda.cpp       # Standalone CUDA benchmark runner
+│       ├── params.bin              # Acquisition metadata binary
+│       └── rf_data.bin             # Simulated RF signal binary (598.5 KB)
+└── scripts/                        # Automated build & execution scripts
+    ├── build_holoscan.sh           # Builds Holoscan binary from canonical source
+    └── run_holoscan.sh             # Launches Holoscan application in any input mode
+```
 
 ---
 
-## 4. Environment & Hardware Requirements
+## 4. Environment & Prerequisites
 
-### Host Environment:
-- **Operating System:** Windows 11 with WSL2 (Ubuntu-22.04 LTS)
-- **GPU:** NVIDIA GeForce RTX 4050 Laptop GPU (6 GB VRAM, Compute Capability 8.9)
-- **Host Software:** MATLAB R2025b with Image Processing & Parallel Computing Toolboxes
+### Host Environment (Windows 11):
+- **MATLAB:** R2025b with Deep Learning Toolbox, Image Processing Toolbox, Parallel Computing Toolbox, and MATLAB Coder / GPU Coder.
+- **C++ Compiler:** Microsoft Visual C++ 2022 (MSVC 17.0).
+- **CUDA Toolkit:** v12.1.
+- **Hardware:** NVIDIA GeForce RTX 4050 Laptop GPU (6 GB VRAM, Compute Capability 8.9).
 
-### WSL2 Environment:
-- **NVIDIA Holoscan SDK:** v4.6.0 (`/opt/nvidia/holoscan`)
-- **CUDA Toolkit:** v13.4 (`/usr/local/cuda-13.4`)
-- **OpenCV:** v4.5.4
-- **CMake:** v3.20+ (v3.31.12 installed)
+### Linux Deployment Environment (WSL2 Ubuntu 22.04 LTS):
+- **NVIDIA Holoscan SDK:** v4.6.0 (`/opt/nvidia/holoscan`).
+- **CUDA Toolkit:** v13.4 (`/usr/local/cuda-13.4` with `nvcc`).
+- **NVIDIA TensorRT:** v10.16.1.
+- **OpenCV:** v4.5.4 (`libopencv-dev`).
+- **CMake:** v3.20+ (v3.31.12 installed).
+- **C++ Compiler:** GCC / G++ 11.4.0.
 
 ---
 
-## 5. Build and Execution Instructions (WSL2)
+## 5. Build & Execution Instructions
 
-### 1. Build the Holoscan C++ Application
+### 1. Build the Holoscan C++ Application (Linux / WSL2)
 
-Run the build script from WSL2. Build artifacts are stored in `~/holoscan_build` outside the Git tree:
+Compiles [`holoscan/app/main.cpp`](file:///c:/Users/anura/Desktop/RealTimeMedicalImaging/holoscan/app/main.cpp) and links [`reconstruction/cuda/das_kernel.cu`](file:///c:/Users/anura/Desktop/RealTimeMedicalImaging/reconstruction/cuda/das_kernel.cu) with Holoscan, TensorRT, OpenCV, and cuFFT. Output binary is placed in `~/holoscan_build/resnet18_holoscan`:
 
 ```bash
 cd /mnt/c/Users/anura/Desktop/RealTimeMedicalImaging
 ./scripts/build_holoscan.sh
 ```
 
-### 2. Run Pipeline Smoke Tests
+### 2. Run Holoscan Streaming Demonstrations
 
-#### Mode A: CUDA RF Reconstruction Stream (5 measured frames)
+#### Mode A: Prerecorded Simulated RF Replay (CUDA DAS + TensorRT)
+Streams raw simulated RF signals through native GPU DAS beamforming, cuFFT envelope extraction, dynamic range mapping, and TensorRT inference:
+
 ```bash
-ULTRASOUND_RF_PATH=/mnt/c/Users/anura/Desktop/RealTimeMedicalImaging/reconstruction/cuda/rf_data.bin STREAM_MEASURED=5 ./scripts/run_holoscan.sh
+ULTRASOUND_RF_PATH="/mnt/c/Users/anura/Desktop/RealTimeMedicalImaging/reconstruction/cuda/rf_data.bin" \
+STREAM_MEASURED=50 \
+./scripts/run_holoscan.sh
 ```
 
-#### Mode B: Single Image Replay Mode
+*Verified Output (October 20, 2026):*
+- **Effective Latency:** $4.05\text{ ms/frame}$
+- **Throughput:** $246.69\text{ FPS}$ (50 measured frames, 10 warm-up)
+- **Scores:** Benign: $0.1608$, Malignant: $0.8256$, Normal: $0.0136$ (Prediction: Malignant)
+
+#### Mode B: Single-Image B-Mode Replay
+Replays a reconstructed B-mode ultrasound image through OpenCV preprocessing and TensorRT inference:
+
 ```bash
-ULTRASOUND_IMAGE_PATH=/mnt/c/Users/anura/Desktop/RealTimeMedicalImaging/docs/rf_bmode_preview.png STREAM_MEASURED=5 ./scripts/run_holoscan.sh
+ULTRASOUND_IMAGE_PATH="/mnt/c/Users/anura/Desktop/RealTimeMedicalImaging/docs/rf_bmode_preview.png" \
+STREAM_MEASURED=50 \
+./scripts/run_holoscan.sh
 ```
 
-#### Mode C: BUSI Dataset Replay Mode
+*Verified Output (October 20, 2026):*
+- **Effective Latency:** $31.53\text{ ms/frame}$ (dominated by per-frame disk I/O via `cv::imread`)
+- **Throughput:** $31.71\text{ FPS}$ (50 measured frames, 10 warm-up)
+- **Scores:** Benign: $0.9967$, Malignant: $0.0028$, Normal: $0.0005$ (Prediction: Benign, matching MATLAB within $7 \times 10^{-5}$)
+
+#### Mode C: BUSI Clinical Dataset Replay
+Streams sequential images from the local BUSI dataset:
+
 ```bash
-STREAM_MEASURED=5 ./scripts/run_holoscan.sh
+ULTRASOUND_ROOT="/mnt/c/Users/anura/Desktop/RealTimeMedicalImaging/data/Dataset_BUSI_with_GT" \
+STREAM_MEASURED=50 \
+./scripts/run_holoscan.sh
 ```
-
-### Environment Variables Reference
-
-| Variable | Description | Default |
-|---|---|---|
-| `ULTRASOUND_RF_PATH` | Path to raw RF binary file (`rf_data.bin`) for live CUDA DAS reconstruction | Unset |
-| `ULTRASOUND_PARAMS_PATH` | Path to DAS acquisition parameters (`params.bin`) | `$(dirname $ULTRASOUND_RF_PATH)/params.bin` |
-| `ULTRASOUND_IMAGE_PATH` | Path to single PNG/JPG image file for single-image mode | Unset |
-| `ULTRASOUND_ROOT` | Path to BUSI dataset directory | `$PROJECT_ROOT/data/Dataset_BUSI_with_GT` |
-| `STREAM_MEASURED` | Number of frames to benchmark after 10 warm-up frames | `100` |
-| `HOLOSCAN_MODEL_PATH` | Path to fine-tuned ResNet-18 ONNX model | `$PROJECT_ROOT/holoscan/models/resnet18_busi.onnx` |
 
 ---
 
-## 6. Performance Accounting & Measurement Boundaries
+## 6. MATLAB / CUDA Numerical Parity Validation
 
-To ensure scientific rigor, performance timing is categorized across precise boundaries:
+To verify the mathematical equivalence of the native CUDA single-precision beamformer against double-precision MATLAB reference code:
 
-| Scope / Processing Stage | Execution Details | Latency / Frame | Effective Throughput | Speedup vs CPU Baseline |
+```matlab
+% In Windows MATLAB R2025b:
+cd('c:\Users\anura\Desktop\RealTimeMedicalImaging\reconstruction');
+exportAndCompareCUDA;
+```
+
+### Parity Metrics Summary:
+- **Linear Envelope PSNR:** **112.26 dB** (Envelope MAE: $4.135 \times 10^{-5}$)
+- **B-Mode Image PSNR:** **73.04 dB** (B-Mode MAE: **0.0032 gray levels** on a $0\text{--}255$ scale)
+- **Normalized Cross-Correlation (NCC):** **1.000000**
+- **Target Spatial Accuracy:** Scatterer localization error $< 0.86\text{ mm}$ for targets 1–4, $1.39\text{ mm}$ for target 5.
+
+---
+
+## 7. Performance Accounting & Measurement Conditions
+
+To maintain scientific integrity, latency figures must be interpreted within their explicit measurement conditions:
+
+| Processing Stage | Implementation / Scope | Latency per Frame | Effective Throughput | Measurement Conditions |
 |---|---|---|---|---|
-| **Baseline MATLAB CPU** | Single-threaded CPU beamforming + Hilbert envelope + log compress | $537.48\text{ ms}$ | $1.86\text{ FPS}$ | $1.00\times$ (Baseline) |
-| **CUDA GPU Steady-State Kernels** | `dasBeamformKernel` + cuFFT C2C + Hilbert filter + Envelope + LogCompress | **0.133 ms** | **7,514.86 FPS** | **$4,041\times$** (Kernel level) |
-| **CUDA GPU + PCIe Data Transfers** | Includes Host-to-Device RF transfer & Device-to-Host B-mode transfer | **1.175 ms** | **851.06 FPS** | **$457\times$** (GPU module) |
-| **Integrated Holoscan RF Pipeline** | Full Holoscan app: RF load + CUDA DAS + NCHW Float32 formatting + TRT ResNet-18 | **25.13 ms** | **39.81 FPS** | **$21.4\times$** (System level) |
+| **MATLAB CPU DAS** | `reconstructDAS.m` (CPU double-precision) | $537\text{--}541\text{ ms}$ | $1.86\text{ FPS}$ | Single-threaded Intel i7 host CPU |
+| **CUDA DAS Pure Kernel** | `dasBeamformKernel` + cuFFT C2C + LogCompress | **0.133 ms** | **7,515 FPS** | Steady-state GPU kernel execution time (RTX 4050) |
+| **CUDA DAS Module** | Kernel + Host/Device PCIe Data Transfers | **1.175 ms** | **851 FPS** | Standalone C++ test harness with memory copies |
+| **TensorRT FP32 Inference** | `resnet18_busi.engine` (FP32) | **1.56 ms** | **641 FPS** | TensorRT standalone context execution |
+| **Holoscan RF Stream (In-Memory)** | End-to-end Holoscan RF replay (`task-1258`) | **4.05 ms** | **246.7 FPS** | 50 measured frames, 10 warm-up, memory-resident RF |
+| **Holoscan RF Stream (Cold / 5-Frame)** | End-to-end Holoscan RF replay (`task-1016`) | **8.73 ms** | **114.6 FPS** | 5 measured frames, 10 warm-up, transient cache state |
+| **Holoscan Single-Image Replay** | End-to-end Holoscan image replay (`task-1265`) | **31.53 ms** | **31.7 FPS** | 50 measured frames, includes per-frame disk file reads |
 
 > [!IMPORTANT]
-> **Boundary Accounting Rules:**
-> - **0.133 ms** is the pure steady-state GPU kernel execution time.
-> - **1.175 ms** includes PCIe host-to-device and device-to-host data transfers.
-> - **25.13 ms** represents total end-to-end streaming latency of the Holoscan C++ application, including single-iteration CUDA DAS execution, Host memory format conversion into `[1, 3, 224, 224]` float32 NCHW tensor, GXF message routing, and TensorRT FP32 ResNet-18 execution.
+> **Measurement Accounting Notice:**
+> - The steady-state $4.05\text{ ms/frame}$ RF streaming latency is achieved because RF data is loaded into host memory once at startup, allowing GPU DAS and TensorRT execution to run without disk I/O bottlenecks.
+> - Shorter or non-steady runs (such as the 5-frame test at $8.73\text{ ms/frame}$ or historical first-run at $25.13\text{ ms/frame}$) include allocator overhead, scheduler initialization, and cache warm-up. These measurements are not conflated and do not constitute a live hardware acquisition latency guarantee.
 
 ---
 
-## 7. Key Technical Evaluations & Design Decisions
+## 8. Technical Evaluations & Engineering Decisions
 
-### 1. CLAHE Enhancement Evaluation (Rejected for Active Inference)
-- Contrast-Limited Adaptive Histogram Equalization (CLAHE) was evaluated in Checkpoint 4 using clip limits $0.01 - 0.05$.
-- **Finding:** While CLAHE improved visual local contrast, it altered ultrasound speckle intensity distributions, degrading ResNet-18 classification performance (e.g. Malignant confidence dropped from $0.9996$ to $0.5739$ or misclassified to Benign).
-- **Decision:** CLAHE was **rejected** as an active input transformation. The unenhanced $0 - 255$ image pipeline was retained to preserve classifier accuracy.
+### 1. Classifier Performance Accounting
+- **Historically Reported Metric:** The fine-tuned ResNet-18 DAGNetwork achieves **80.17% test accuracy** on the held-out 116-image BUSI test split (65 benign, 31 malignant, 20 normal).
+- **Per-Class Breakdown:** Benign F1: $83.47\%$, Malignant F1: $81.97\%$, Normal F1: $68.18\%$.
+- **Truth in Reporting:** Training and evaluation were executed offline prior to repository handoff; the model binary is saved as [`models/netResNet.mat`](file:///c:/Users/anura/Desktop/RealTimeMedicalImaging/models/netResNet.mat). Unsubstantiated claims of 98.08% accuracy or AUC 1.0 have been removed.
 
-### 2. GPU Coder MEX vs Custom CUDA Holoscan Operator
-- **GPU Coder MEX (Checkpoint 3):** MATLAB GPU Coder generated MEX code (`resnetPredict_mex.mexw64`) achieved $6.92\text{ ms}$ inference latency with $1.42 \times 10^{-7}$ numerical score difference vs double-precision MATLAB.
-- **Custom CUDA C++ Operator (Checkpoint 7-8):** For the RF reconstruction stage, native custom CUDA C++ kernels (`das_kernel.cu`) were written directly in C++/nvcc to avoid MATLAB runtime host dependencies and enable native C++ Holoscan integration.
+### 2. Image Enhancement Evaluation (CLAHE & Wiener Filtering Rejected)
+- **CLAHE Evaluation ([`docs/image_enhancement_evaluation.md`](file:///c:/Users/anura/Desktop/RealTimeMedicalImaging/docs/image_enhancement_evaluation.md)):** Tested across clip limits $0.005\text{--}0.050$. Rejected because contrast stretching destroyed acoustic attenuation shadows, causing a catastrophic false negative on `malignant (1).png` (flipping the diagnosis to Benign with $63.97\%$ confidence).
+- **Wiener Filter Evaluation ([`docs/checkpoint_b_enhancement_gpu_coder.md`](file:///c:/Users/anura/Desktop/RealTimeMedicalImaging/docs/checkpoint_b_enhancement_gpu_coder.md)):** Tested with $[3 \times 3]$ and $[5 \times 5]$ adaptive smoothing windows. While diagnostic labels were preserved, confidence on the malignant lesion dropped by $5.60\%$ due to lesion boundary blurring.
+- **Decision:** Both enhancement methods were **formally rejected**. The unenhanced native B-mode baseline is retained across all active pipelines.
 
----
-
-## 8. Summary of Original Brief Objectives vs Project Deliverables
-
-| Original Project Objective | Status | Implementation & Validation Summary |
-|---|---|---|
-| **1. Medical Image Preprocessing** | **COMPLETED** | Grayscale conversion, $224 \times 224$ resizing, 3-channel replication, NCHW float32 normalization. |
-| **2. Baseline CNN Classifier** | **COMPLETED** | 3-layer Custom CNN architecture defined in MATLAB (`models/createCNN.m`). |
-| **3. Transfer Learning (ResNet-18)** | **COMPLETED** | Fine-tuned ResNet-18 with historically reported **80.17% test accuracy** on held-out BUSI split (Benign F1: 83.47%, Malignant F1: 81.97%, Normal F1: 68.18%). |
-| **4. Comprehensive Model Evaluation** | **COMPLETED** | Evaluated on held-out test split via Precision, Recall, and F1-score per class. (Training/eval was performed offline; model saved as `models/netResNet.mat`). |
-| **5. NVIDIA GPU Acceleration (TensorRT)** | **COMPLETED** | Converted ONNX model to TensorRT FP32 engine (`resnet18_busi.engine`), running in Holoscan at **44.73 FPS**. |
-| **6. MATLAB GUI Application** | **COMPLETED** | Developed interactive MATLAB GUI (`inference/ultrasoundApp.m`) with live ultrasound image classification. |
-| **7. Real-Time Edge Architecture (Holoscan C++)** | **COMPLETED** | Native C++ Holoscan application constructed with custom GXF operators and TensorRT inference. |
-| **8. Raw RF Reconstruction (CUDA DAS)** | **COMPLETED (Simulated)** | Custom CUDA C++ DAS beamforming kernel integrated into Holoscan (**39.81 FPS** end-to-end). Verified against MATLAB CPU (**73.04 dB PSNR**). |
-| **9. Hardware ADC Live Acquisition** | **NOT COMPLETED / OUT OF SCOPE** | Requires physical ultrasound transducer hardware and PCIe ADC digitizer. Disclosed as offline simulated RF replay. |
+### 3. GPU Coder Feasibility vs. Native CUDA Holoscan Architecture
+- **Windows Desktop Acceleration:** Validated Windows GPU Coder MEX ([`resnetPredict_mex.mexw64`](file:///c:/Users/anura/Desktop/RealTimeMedicalImaging/acceleration/resnetPredict_mex.mexw64)), achieving a **3.22x speedup** ($2.57\text{ ms/frame}$) with numerical error $< 6.0 \times 10^{-7}$ vs. MATLAB double-precision `predict()`. Retained for interactive MATLAB desktop use.
+- **Linux GPU Coder Feasibility:** Demonstrated that MATLAB GPU Coder can export standalone C++/CUDA source files (`GenCodeOnly = true`) decoupled from MEX APIs, and compiled them under Linux WSL2 with CUDA 13.4 into a static library ([`libgpusimpletest.a`](file:///c:/Users/anura/Desktop/RealTimeMedicalImaging/docs/checkpoint_b_enhancement_gpu_coder.md#33-standalone-linux-code-generation--compilation-proof-of-concept), 25.8 KB).
+- **Deployment Decision:** The native handwritten CUDA DAS kernel ([`das_kernel.cu`](file:///c:/Users/anura/Desktop/RealTimeMedicalImaging/reconstruction/cuda/das_kernel.cu)) and TensorRT FP32 engine are retained for Linux Holoscan deployment. Forcing GPU Coder-generated C++ code into Holoscan GXF operators would introduce MATLAB runtime header dependencies without providing latency or quality benefits.
 
 ---
 
-## 9. Disclaimers & Disclosures
+## 9. Disclaimers & Limitations
 
-> [!NOTE]
-> **Clinical & Hardware Disclaimer:**
-> 1. **Offline Simulated RF Data:** The raw RF dataset (`rf_data.bin`) is simulated from a 5-scatterer physics phantom model. It demonstrates software/hardware integration of GPU beamforming within NVIDIA Holoscan, but does not represent live hardware ADC acquisition.
-> 2. **Not a Clinical Device:** This software is an engineering demonstration of GPU acceleration for medical image processing and is not certified for clinical diagnostic use.
+> [!WARNING]
+> **Research & Demonstration Boundaries:**
+> 1. **Prerecorded / Simulated RF Data:** The RF dataset (`rf_data.bin`) is simulated from a 5-scatterer acoustic phantom model. The system demonstrates software/hardware pipeline integration within NVIDIA Holoscan and does **not** interface with a physical ultrasound transducer or ADC digitizer.
+> 2. **Out-of-Domain Inference:** The ResNet-18 classifier was fine-tuned on clinical B-mode breast ultrasound images. Outputs on synthetic point-scatterer phantom reconstructions reflect algorithmic responses to synthetic acoustic reflections and must not be interpreted as clinical diagnoses.
+> 3. **Non-Clinical Software:** This project is an academic research and engineering demonstration of GPU acceleration and is not certified or intended for clinical diagnostic use.
