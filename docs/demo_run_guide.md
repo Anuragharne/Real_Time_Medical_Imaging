@@ -118,6 +118,7 @@ exportAndCompareCUDA;
 - **Linear Envelope PSNR:** $112.26\text{ dB}$ (MAE: $4.135 \times 10^{-5}$)
 - **B-Mode Image PSNR:** $73.04\text{ dB}$ (MAE: $0.0032$ gray levels on a $0\text{--}255$ scale)
 - **Normalized Cross-Correlation (NCC):** $1.000000$
+- **Target Spatial Accuracy:** $0.32\text{--}0.41\text{ mm}$ error across all 5 scatterer targets in canonical windowed peak search ($0.09\text{--}1.39\text{ mm}$ in historical unconstrained search)
 
 ---
 
@@ -145,6 +146,20 @@ For evaluators or authors producing a live video walkthrough, follow this struct
 
 ---
 
-## 3. Outstanding Video Deliverable Note
+## 3. Outstanding Video Deliverable & Minimal Recording Steps
 
-As authorized by the Checkpoint C specifications, because headless container/agent environments lack a physical virtual display server for non-interactive screencasting, the live video file itself is marked as an **outstanding deliverable**. All underlying binaries, launch scripts, test artifacts, and verified terminal evidence are fully functional and immediately reproducible using the instructions above.
+### Environment Limitation & Status:
+In background/agent automation sessions, direct screen capture via `ffmpeg -f gdigrab` is prohibited by Windows Session 0 / GDI isolation (`error 5: Access Denied`), and no virtual screen capture driver (OBS / dshow) is installed. To avoid generating fabricated or synthetic recordings, the physical video file is marked as an **outstanding deliverable**.
+
+All underlying binaries, launch scripts, test artifacts, and verified terminal evidence are fully functional and immediately reproducible.
+
+### Minimal Steps for User to Record Live Demonstration:
+1. Open Windows Terminal (running WSL2 Ubuntu) alongside VS Code or a browser viewing [`docs/pipeline_architecture.svg`](file:///c:/Users/anura/Desktop/RealTimeMedicalImaging/docs/pipeline_architecture.svg).
+2. Press **`Win + Alt + R`** (built-in Windows Xbox Game Bar recorder) or use Snipping Tool screen recorder (**`Win + Shift + R`**).
+3. Follow the 4-part shot list above:
+   - Introduce architecture diagram (Scene 1).
+   - Run Mode A RF replay command in WSL (Scene 2).
+   - Run Mode B single-image replay command in WSL (Scene 3).
+   - Run `exportAndCompareCUDA` in MATLAB (Scene 4).
+4. Press **`Win + Alt + R`** to finish recording.
+5. Save the resulting MP4 file as `docs/demo_walkthrough.mp4`.

@@ -108,7 +108,7 @@ flowchart TD
 - **Memory Resource:** `holoscan::make_resource<UnboundedAllocator>("inference_allocator")`.
 - **Mode A Processing (CUDA RF DAS):**
   1. Calls `runDASBeamformingCUDA()` implemented in [`reconstruction/cuda/das_kernel.cu`](file:///c:/Users/anura/Desktop/RealTimeMedicalImaging/reconstruction/cuda/das_kernel.cu).
-  2. Executes GPU Delay-and-Sum beamforming with sub-sample parabolic interpolation and dynamic apodization across $128$ physical transducer elements and $224 \times 224$ focal grid points.
+  2. Executes GPU Delay-and-Sum beamforming with sub-sample parabolic interpolation and dynamic apodization across $64$ physical transducer elements and $224 \times 224$ focal grid points.
   3. Applies cuFFT forward 1D FFT, zeroing of negative frequencies, and inverse 1D FFT for exact analytical Hilbert envelope detection.
   4. Applies log compression: $B = 20 \log_{10}(E / \max(E)) + 40\text{ dB}$, normalized to $[0, 255]$ uint8.
   5. Formats output buffer into NCHW Float32 $[1, 3, 224, 224]$.

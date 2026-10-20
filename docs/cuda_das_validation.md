@@ -42,15 +42,17 @@ To validate numerical parity between MATLAB CPU and CUDA GPU reconstructions, th
 
 ## 3. 2D Spatial Target Localization (5 Scatterer Targets)
 
-All 5 simulated scatterer targets are localized with sub-millimeter to millimeter precision by the CUDA beamformer:
+All 5 simulated acoustic point-scatterer targets are localized by the CUDA beamformer. In the canonical validation script ([`reconstruction/exportAndCompareCUDA.m`](file:///c:/Users/anura/Desktop/RealTimeMedicalImaging/reconstruction/exportAndCompareCUDA.m)), a localized peak window ($\pm 10$ pixels) around each expected target coordinates yields spatial errors of **$0.32\text{--}0.41\text{ mm}$**:
 
-| Target Scatterer | Simulated Target $(x, z)$ | CUDA GPU Peak $(x, z)$ | Spatial Error | Status |
+| Target Scatterer | Simulated Target $(x, z)$ | Canonical CUDA Peak $(x, z)$ | Canonical Spatial Error | Historical Unconstrained Search Error |
 |---|---|---|---|---|
-| **Target 1 (Center, 15 mm)** | $(x=0.0\text{ mm}, z=15.0\text{ mm})$ | $(x=+0.1\text{ mm}, z=14.1\text{ mm})$ | $0.86\text{ mm}$ | **PASSED** |
-| **Target 2 (Left, 25 mm)** | $(x=-5.0\text{ mm}, z=25.0\text{ mm})$ | $(x=-4.7\text{ mm}, z=24.9\text{ mm})$ | $0.36\text{ mm}$ | **PASSED** |
-| **Target 3 (Right, 25 mm)** | $(x=+5.0\text{ mm}, z=25.0\text{ mm})$ | $(x=+5.0\text{ mm}, z=25.1\text{ mm})$ | **$0.09\text{ mm}$** | **PASSED** |
-| **Target 4 (Center, 35 mm)** | $(x=0.0\text{ mm}, z=35.0\text{ mm})$ | $(x=+0.1\text{ mm}, z=35.9\text{ mm})$ | $0.86\text{ mm}$ | **PASSED** |
-| **Target 5 (Left, 35 mm)** | $(x=-8.0\text{ mm}, z=35.0\text{ mm})$ | $(x=-8.0\text{ mm}, z=36.4\text{ mm})$ | $1.39\text{ mm}$ | **PASSED** |
+| **Target 1 (Center, 15 mm)** | $(x=0.0\text{ mm}, z=15.0\text{ mm})$ | $(x=-0.0\text{ mm}, z=15.4\text{ mm})$ | **$0.41\text{ mm}$** | $0.86\text{ mm}$ |
+| **Target 2 (Left, 25 mm)** | $(x=-5.0\text{ mm}, z=25.0\text{ mm})$ | $(x=-5.3\text{ mm}, z=25.3\text{ mm})$ | **$0.38\text{ mm}$** | $0.36\text{ mm}$ |
+| **Target 3 (Right, 25 mm)** | $(x=+5.0\text{ mm}, z=25.0\text{ mm})$ | $(x=+5.3\text{ mm}, z=25.3\text{ mm})$ | **$0.38\text{ mm}$** | $0.09\text{ mm}$ |
+| **Target 4 (Center, 35 mm)** | $(x=0.0\text{ mm}, z=35.0\text{ mm})$ | $(x=0.0\text{ mm}, z=35.3\text{ mm})$ | **$0.32\text{ mm}$** | $0.86\text{ mm}$ |
+| **Target 5 (Left, 35 mm)** | $(x=-8.0\text{ mm}, z=35.0\text{ mm})$ | $(x=-8.0\text{ mm}, z=35.3\text{ mm})$ | **$0.32\text{ mm}$** | $1.39\text{ mm}$ |
+
+*Note on Historical Discrepancy:* In an earlier development iteration prior to `exportAndCompareCUDA.m` adopting local windowing around scatterer coordinates, global peak detection produced errors between $0.09\text{ mm}$ and $1.39\text{ mm}$ due to acoustic sidelobe energy interference at deeper depths ($z=35\text{ mm}$). Both sets of figures are retained for historical auditability.
 
 ---
 

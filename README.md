@@ -190,7 +190,7 @@ exportAndCompareCUDA;
 - **Linear Envelope PSNR:** **112.26 dB** (Envelope MAE: $4.135 \times 10^{-5}$)
 - **B-Mode Image PSNR:** **73.04 dB** (B-Mode MAE: **0.0032 gray levels** on a $0\text{--}255$ scale)
 - **Normalized Cross-Correlation (NCC):** **1.000000**
-- **Target Spatial Accuracy:** Scatterer localization error $< 0.86\text{ mm}$ for targets 1–4, $1.39\text{ mm}$ for target 5.
+- **Target Spatial Accuracy:** In canonical `exportAndCompareCUDA.m`, scatterer localization error across all 5 targets is **0.32–0.41 mm** (Target 1: $0.41\text{ mm}$, Target 2: $0.38\text{ mm}$, Target 3: $0.38\text{ mm}$, Target 4: $0.32\text{ mm}$, Target 5: $0.32\text{ mm}$). In earlier unconstrained peak search without local windowing, errors ranged from $0.09\text{--}1.39\text{ mm}$.
 
 ---
 
@@ -204,14 +204,15 @@ To maintain scientific integrity, latency figures must be interpreted within the
 | **CUDA DAS Pure Kernel** | `dasBeamformKernel` + cuFFT C2C + LogCompress | **0.133 ms** | **7,515 FPS** | Steady-state GPU kernel execution time (RTX 4050) |
 | **CUDA DAS Module** | Kernel + Host/Device PCIe Data Transfers | **1.175 ms** | **851 FPS** | Standalone C++ test harness with memory copies |
 | **TensorRT FP32 Inference** | `resnet18_busi.engine` (FP32) | **1.56 ms** | **641 FPS** | TensorRT standalone context execution |
-| **Holoscan RF Stream (In-Memory)** | End-to-end Holoscan RF replay (`task-1258`) | **4.05 ms** | **246.7 FPS** | 50 measured frames, 10 warm-up, memory-resident RF |
-| **Holoscan RF Stream (Cold / 5-Frame)** | End-to-end Holoscan RF replay (`task-1016`) | **8.73 ms** | **114.6 FPS** | 5 measured frames, 10 warm-up, transient cache state |
-| **Holoscan Single-Image Replay** | End-to-end Holoscan image replay (`task-1265`) | **31.53 ms** | **31.7 FPS** | 50 measured frames, includes per-frame disk file reads |
+| **Holoscan RF Replay (50-Frame Run)** | End-to-end Holoscan RF replay (`task-1258`) | **4.05 ms** | **246.7 FPS** | 50 measured frames (0.2027 s total), 10 warm-up frames, in-memory RF binary |
+| **Holoscan RF Replay (5-Frame Run)** | End-to-end Holoscan RF replay (`task-1016`) | **8.73 ms** | **114.6 FPS** | 5 measured frames (0.0436 s total), 10 warm-up frames, in-memory RF binary |
+| **Holoscan RF Replay (Historical Run)** | Historical recorded run (`docs/cuda_das_validation.md`) | **25.13 ms** | **39.8 FPS** | 5 measured frames (0.1256 s total), 10 warm-up frames |
+| **Holoscan Single-Image Replay** | End-to-end Holoscan image replay (`task-1265`) | **31.53 ms** | **31.7 FPS** | 50 measured frames (1.5766 s total), 10 warm-up frames, includes per-frame disk file reads via `cv::imread` |
 
 > [!IMPORTANT]
 > **Measurement Accounting Notice:**
-> - The steady-state $4.05\text{ ms/frame}$ RF streaming latency is achieved because RF data is loaded into host memory once at startup, allowing GPU DAS and TensorRT execution to run without disk I/O bottlenecks.
-> - Shorter or non-steady runs (such as the 5-frame test at $8.73\text{ ms/frame}$ or historical first-run at $25.13\text{ ms/frame}$) include allocator overhead, scheduler initialization, and cache warm-up. These measurements are not conflated and do not constitute a live hardware acquisition latency guarantee.
+> - In RF replay mode, RF data is loaded into host memory once at startup; subsequent iterations execute GPU DAS and TensorRT directly. Latency measured over 50 frames was $4.05\text{ ms/frame}$ ($0.2027\text{ s}$ total), compared to $8.73\text{ ms/frame}$ ($0.0436\text{ s}$ total) in a separate 5-frame run and $25.13\text{ ms/frame}$ ($0.1256\text{ s}$ total) in an earlier recorded 5-frame run. Each figure reflects its exact recorded test invocation and frame count.
+> - These figures represent software file replay throughput under specific host/WSL2 conditions and must not be presented as live ultrasound hardware acquisition performance.
 
 ---
 
