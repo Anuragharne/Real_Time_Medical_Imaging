@@ -5,8 +5,13 @@ function ultrasoundApp()
     %  Load final ResNet-18 model
     %  ============================================================
 
-    modelPath = ...
-        "C:\Users\anura\Desktop\RealTimeMedicalImaging\models\netResNet.mat";
+    appDir = fileparts(mfilename('fullpath'));
+    repoRoot = fileparts(appDir);
+    modelPath = fullfile(repoRoot, 'models', 'netResNet.mat');
+
+    if ~isfile(modelPath)
+        error('Model file netResNet.mat not found at: %s', modelPath);
+    end
 
     modelData = load(modelPath, "netResNet");
     netResNet = modelData.netResNet;

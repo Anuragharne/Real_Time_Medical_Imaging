@@ -43,9 +43,18 @@ fi
 
 MEASURED_FRAMES="${STREAM_MEASURED:-100}"
 
-# Single-image or dataset-replay stream setup
+# Stream mode selection: RF binary, single image, or BUSI dataset replay
+RF_PATH="${ULTRASOUND_RF_PATH:-}"
 IMAGE_PATH="${ULTRASOUND_IMAGE_PATH:-}"
-if [ -n "$IMAGE_PATH" ]; then
+
+if [ -n "$RF_PATH" ]; then
+    if [ ! -f "$RF_PATH" ]; then
+        echo "Error: Specified RF binary file not found at '$RF_PATH'." >&2
+        exit 1
+    fi
+    export ULTRASOUND_RF_PATH="$RF_PATH"
+    INPUT_DESC="CUDA RF DAS Reconstruct: $RF_PATH"
+elif [ -n "$IMAGE_PATH" ]; then
     if [ ! -f "$IMAGE_PATH" ]; then
         echo "Error: Specified image file not found at '$IMAGE_PATH'." >&2
         exit 1
@@ -56,7 +65,7 @@ else
     DATASET_ROOT="${ULTRASOUND_ROOT:-$PROJECT_ROOT/data/Dataset_BUSI_with_GT}"
     if [ ! -d "$DATASET_ROOT" ]; then
         echo "Error: Dataset directory not found at '$DATASET_ROOT'." >&2
-        echo "Verify dataset path or set ULTRASOUND_ROOT env variable." >&2
+        echo "Verify dataset path or set ULTRASOUND_ROOT, ULTRASOUND_IMAGE_PATH, or ULTRASOUND_RF_PATH env variable." >&2
         exit 1
     fi
     export ULTRASOUND_ROOT="$DATASET_ROOT"

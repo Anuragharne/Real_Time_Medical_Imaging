@@ -13,10 +13,13 @@ function [predictedLabel, scores, processedImage] = predictUltrasound(filename)
     persistent net
 
     if isempty(net)
-        modelData = load( ...
-            "C:\Users\anura\Desktop\RealTimeMedicalImaging\models\netResNet.mat", ...
-            "netResNet");
-
+        fnDir = fileparts(mfilename('fullpath'));
+        repoRoot = fileparts(fnDir);
+        modelPath = fullfile(repoRoot, 'models', 'netResNet.mat');
+        if ~isfile(modelPath)
+            error('Model file netResNet.mat not found at: %s', modelPath);
+        end
+        modelData = load(modelPath, "netResNet");
         net = modelData.netResNet;
     end
 

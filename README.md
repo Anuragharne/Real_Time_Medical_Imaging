@@ -9,7 +9,7 @@ A hybrid MATLAB / C++ NVIDIA Holoscan system for breast ultrasound image process
 This project implements an end-to-end AI-assisted breast ultrasound classification and reconstruction system using **MATLAB R2025b** and the **NVIDIA Holoscan SDK (v4.6)** powered by **CUDA 13.4** and **TensorRT**.
 
 ### Key System Highlights:
-- **Transfer Learning Classifier:** ResNet-18 fine-tuned on the BUSI (Breast Ultrasound Images) dataset, classifying ultrasound scans into 3 categories (**Benign**, **Malignant**, **Normal**) with **98.08% overall accuracy** ($1.0000$ AUC for Malignant/Benign).
+- **Transfer Learning Classifier:** ResNet-18 fine-tuned on the BUSI (Breast Ultrasound Images) dataset, classifying ultrasound scans into 3 categories (**Benign**, **Malignant**, **Normal**). Historically reported test accuracy on the held-out split is **80.17%** (Benign F1: 83.47%, Malignant F1: 81.97%, Normal F1: 68.18%).
 - **GPU-Accelerated DAS Beamforming:** Custom CUDA C++ Delay-and-Sum (DAS) beamformer executing parallel delay calculation, fractional sample interpolation, 1D batched cuFFT Hilbert transform, and log compression.
 - **Parity Verified against MATLAB CPU:** Achieved **73.04 dB PSNR** ($0.0032$ gray levels MAE, $1.000000$ structural correlation) between MATLAB CPU double-precision reference and CUDA GPU single-precision beamforming.
 - **NVIDIA Holoscan C++ Pipeline:** Integrated streaming application supporting live CUDA RF reconstruction, single-image replay, and dataset streaming directly into TensorRT ResNet-18 inference at **39.81 FPS** ($25.13\text{ ms}$ latency).
@@ -35,12 +35,12 @@ The system is architected across a hybrid Windows / Linux (WSL2) environment:
         | • CPU DAS Reference      |                              | • cuFFT Envelope Detect  |
         | • Model Fine-Tuning      |                              | • Float32 NCHW Tensor    |
         | • GPU Coder MEX Valid.   |                              | • TensorRT Engine Infer. |
-        | • MATLAB App Designer UI |                              | • 39.81 FPS End-to-End   |
+        | • Interactive MATLAB GUI |                              | • 39.81 FPS End-to-End   |
         +--------------------------+                              +--------------------------+
 ```
 
 ### Environment Responsibilities:
-- **Windows (MATLAB R2025b):** Used for baseline CNN training, ResNet-18 fine-tuning, physics-based RF acoustic phantom simulation (`simulateRFData.m`), reference CPU beamforming (`reconstructDAS.m`), GPU Coder MEX code generation validation, CLAHE enhancement evaluation, and interactive MATLAB GUI (`ultrasound_gui.mlapp`).
+- **Windows (MATLAB R2025b):** Used for baseline CNN architecture definition, ResNet-18 transfer learning model host (`models/netResNet.mat`), physics-based RF acoustic phantom simulation (`simulateRFData.m`), reference CPU beamforming (`reconstructDAS.m`), GPU Coder MEX validation, CLAHE enhancement evaluation, and interactive MATLAB GUI (`inference/ultrasoundApp.m`).
 - **Linux / WSL2 (Ubuntu 22.04 LTS):** Production deployment environment running C++ NVIDIA Holoscan SDK 4.6, CUDA 13.4, and TensorRT. Executes native CUDA DAS kernels (`das_kernel.cu`) and feeds NCHW float32 tensors (`[1, 3, 224, 224]`) directly into TensorRT inference engine on an NVIDIA GeForce RTX 4050 Laptop GPU.
 
 ---
@@ -150,11 +150,11 @@ To ensure scientific rigor, performance timing is categorized across precise bou
 | Original Project Objective | Status | Implementation & Validation Summary |
 |---|---|---|
 | **1. Medical Image Preprocessing** | **COMPLETED** | Grayscale conversion, $224 \times 224$ resizing, 3-channel replication, NCHW float32 normalization. |
-| **2. Baseline CNN Classifier** | **COMPLETED** | 3-layer Custom CNN built and benchmarked ($67.31\%$ test accuracy). |
-| **3. Transfer Learning (ResNet-18)** | **COMPLETED** | Fine-tuned ResNet-18 achieving **98.08% overall accuracy** ($100\%$ precision/recall on Malignant/Benign). |
-| **4. Comprehensive Model Evaluation** | **COMPLETED** | Evaluated via Confusion Matrix, ROC curves ($1.0000$ AUC), Precision, Recall, F1-score. |
+| **2. Baseline CNN Classifier** | **COMPLETED** | 3-layer Custom CNN architecture defined in MATLAB (`models/createCNN.m`). |
+| **3. Transfer Learning (ResNet-18)** | **COMPLETED** | Fine-tuned ResNet-18 with historically reported **80.17% test accuracy** on held-out BUSI split (Benign F1: 83.47%, Malignant F1: 81.97%, Normal F1: 68.18%). |
+| **4. Comprehensive Model Evaluation** | **COMPLETED** | Evaluated on held-out test split via Precision, Recall, and F1-score per class. (Training/eval was performed offline; model saved as `models/netResNet.mat`). |
 | **5. NVIDIA GPU Acceleration (TensorRT)** | **COMPLETED** | Converted ONNX model to TensorRT FP32 engine (`resnet18_busi.engine`), running in Holoscan at **44.73 FPS**. |
-| **6. MATLAB GUI Application** | **COMPLETED** | Developed interactive MATLAB App Designer interface (`ultrasound_gui.mlapp`) with live predictions. |
+| **6. MATLAB GUI Application** | **COMPLETED** | Developed interactive MATLAB GUI (`inference/ultrasoundApp.m`) with live ultrasound image classification. |
 | **7. Real-Time Edge Architecture (Holoscan C++)** | **COMPLETED** | Native C++ Holoscan application constructed with custom GXF operators and TensorRT inference. |
 | **8. Raw RF Reconstruction (CUDA DAS)** | **COMPLETED (Simulated)** | Custom CUDA C++ DAS beamforming kernel integrated into Holoscan (**39.81 FPS** end-to-end). Verified against MATLAB CPU (**73.04 dB PSNR**). |
 | **9. Hardware ADC Live Acquisition** | **NOT COMPLETED / OUT OF SCOPE** | Requires physical ultrasound transducer hardware and PCIe ADC digitizer. Disclosed as offline simulated RF replay. |

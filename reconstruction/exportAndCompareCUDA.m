@@ -1,5 +1,6 @@
 % MATLAB Harness: Export RF Data, Execute CUDA DAS, and Compare Parity & Latency
-repoRoot = 'c:\Users\anura\Desktop\RealTimeMedicalImaging';
+scriptDir = fileparts(mfilename('fullpath'));
+repoRoot = fileparts(scriptDir);
 addpath(fullfile(repoRoot, 'reconstruction'));
 addpath(fullfile(repoRoot, 'preprocessing'));
 
